@@ -74,5 +74,5 @@ The following members are always mandatory:
 
 All mandatory members must be `public`. All mandatory member variables and functions must be either `const` or `static` except `dist_category` and `tail_category` which must always be `static`. If all mandatory members are defined as `static` members (like `StandardNormal`), the `Ziggurat` constructor should be called with no arguments. Otherwise an instance of the distribution's class must be provided to the `Ziggurat` constructor. `ASYMMETRIC` distributions having non-`static` members, must have instances of `Left` and `Right` classes named `left` and `right`, respectively. That is they must have the following members `Left left` and `Right right`. Please see the code of `Gamma`, `Weibull`, `LogNormal` or `FisherF` distributions as an example.
 
-[original Ziggurat]: to-be-filled:-link-to-Ziggurat
+[original Ziggurat]: https://www.jstatsoft.org/index.php/jss/article/view/v005i08/ziggurat.pdf
 [generalized Ziggurat]: to-be-filled:-link-to-draft
