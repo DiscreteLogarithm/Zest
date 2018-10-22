@@ -20,10 +20,10 @@ namespace zest {
 
   namespace math {
 
-    const double pi = 4*std::atan(1);
-    const double half_pi = 2*std::atan(1);
-    const double half_pi_sqrt = std::sqrt(half_pi);
-    double sqrt_minus_2_log (double x) {return std::sqrt (-2*std::log(x));}
+    static const double pi = 4*std::atan(1);
+    static const double half_pi = 2*std::atan(1);
+    static const double half_pi_sqrt = std::sqrt(half_pi);
+    static double sqrt_minus_2_log (double x) {return std::sqrt (-2*std::log(x));}
 
     template <typename T>
     constexpr T pow (T x, uint_fast8_t n) {return n ? x*pow(x, n-1) : 1;}
@@ -36,14 +36,14 @@ namespace zest {
       return x;
     }
 
-    double ibeta_derivative (double df1, double df2, double x) {
+    static double ibeta_derivative (double df1, double df2, double x) {
       // not checking for special cases of df1==0 || df2==0 || x==0 || x==1
       // the first two are disallowed in the FisherF constructor
       // the last two are always satisfied by the arguments used in calls from fisher_f_pdf
       return std::pow (x, df1-1) * std::pow (1-x, df2-1);
     }
     
-    double fisher_f_pdf (double df1, double df2, double x) {
+    static double fisher_f_pdf (double df1, double df2, double x) {
       // modified version of boost pdf
       // not using the Lanczos approximation however because we don't want a normalized pdf
       // and the precision is already satisfactory
@@ -69,7 +69,7 @@ namespace zest {
       return result;
     }
 
-    double fisher_f_cdf (double df1, double df2, double x) {
+    static double fisher_f_cdf (double df1, double df2, double x) {
       // modified version of boost cdf
       
       if (x < 0 || std::isinf(x)) throw std::logic_error ("Domain error in fisher_f_cdf");
@@ -88,7 +88,7 @@ namespace zest {
           ? boost::math::betac(df2 / 2, df1 / 2, df2 / (df2 + v1x))
           : boost::math::beta(df1 / 2, df2 / 2, v1x / (df2 + v1x));
     }
-    double fisher_f_ccdf (double df1, double df2, double x) {
+    static double fisher_f_ccdf (double df1, double df2, double x) {
       // modified version of boost cdf
       
       if (x < 0 || std::isinf(x)) throw std::logic_error ("Domain error in fisher_f_ccdf");
@@ -875,7 +875,7 @@ namespace zest {
     constexpr auto overall_efficiency_error_threshold = 1e-5;
     constexpr auto overall_efficiency_warning_threshold = 1e-1;
 
-    void verify_region_rejection_efficiency (double region_efficiency, uint_fast16_t region_idx) {
+    static void verify_region_rejection_efficiency (double region_efficiency, uint_fast16_t region_idx) {
       if (region_efficiency < region_efficiency_error_threshold) {
         std::cerr << "ERROR: region #" << region_idx << " has extremely low rejection efficiency: " << region_efficiency << std::endl;
         throw std::logic_error ("extremely low rejection efficiency");
@@ -884,7 +884,7 @@ namespace zest {
         std::cerr << "WARNING: region #" << region_idx << " has low rejection efficiency: " << region_efficiency << std::endl;
     }
 
-    void verify_overall_rejection_efficiency (double overall_efficiency) {
+    static void verify_overall_rejection_efficiency (double overall_efficiency) {
       if (overall_efficiency < overall_efficiency_error_threshold) {
         std::cerr << "ERROR: extremely low overall rejection efficiency: " << overall_efficiency << std::endl;
         throw std::logic_error ("extremely low overall rejection efficiency");
