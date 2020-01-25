@@ -52,7 +52,7 @@ int main () {
   Ziggurat<Cauchy, std::mt19937> ziggurat_for_cauchy {cauchy_dist};
   std::cout << "Cauchy variate: " << ziggurat_for_cauchy (urbg) << std::endl;
   
-  Exponential exponential_dist {/*rate =*/ 0.5, /*mode =*/ -1};
+  Exponential exponential_dist {/*mode =*/ -1, /*rate =*/ 0.5};
   Ziggurat<Exponential, std::mt19937> ziggurat_for_exponential {exponential_dist};
   std::cout << "Exponential variate: " << ziggurat_for_exponential (urbg) << std::endl;
   

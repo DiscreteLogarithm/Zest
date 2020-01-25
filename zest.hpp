@@ -120,7 +120,7 @@ namespace zest {
     static constexpr bool is_mode_unbounded = false;
     static constexpr auto dist_category = DistCategory::SYMMETRIC;
     static constexpr auto tail_category = TailCategory::MAP_REJECT;
-    constexpr Normal (double mode = 0.0, double stddev = 1.0) : mode{mode}, stddev{stddev} {
+    constexpr Normal (double mode = 0.0, double stddev = 1.0) : stddev{stddev}, mode{mode} {
       if (stddev <= 0) throw std::logic_error ("stddev must be positive");
     }
     double pdf (double x) const {return std::exp (-(x-mode)*(x-mode)/(2.*stddev*stddev));}
@@ -182,7 +182,7 @@ namespace zest {
     static constexpr bool is_mode_unbounded = false;
     static constexpr auto dist_category = DistCategory::STRICTLY_DECREASING;
     static constexpr auto tail_category = TailCategory::MAP;
-    constexpr Exponential (double mode = 0.0, double inverse_scale = 1.0) : mode{mode}, inverse_scale{inverse_scale} {
+    constexpr Exponential (double mode = 0.0, double inverse_scale = 1.0) : inverse_scale{inverse_scale}, mode{mode} {
       if (inverse_scale <= 0) throw std::logic_error ("inverse_scale must be positive");
     }
     double pdf (double x) const {return std::exp (-(x-mode)*inverse_scale);}
@@ -241,7 +241,7 @@ namespace zest {
     static constexpr bool is_mode_unbounded = false;
     static constexpr auto dist_category = DistCategory::SYMMETRIC;
     static constexpr auto tail_category = TailCategory::MAP;
-    constexpr Cauchy (double mode = 0.0, double scale = 1.0) : mode{mode}, scale{scale} {
+    constexpr Cauchy (double mode = 0.0, double scale = 1.0) : scale{scale}, mode{mode} {
       if (scale <= 0) throw std::logic_error ("scale must be positive");
     }
     constexpr double pdf (double x) const {return 1./(1. + ((x - mode)/scale)*((x - mode)/scale));}
@@ -402,7 +402,7 @@ namespace zest {
       static constexpr auto dist_category = DistCategory::STRICTLY_DECREASING;
       static constexpr auto tail_category = TailCategory::MAP_REJECT;
       Right (double shape, double scale)
-      : shape{shape}, scale{scale}, is_mode_unbounded{shape<1}, mode{shape > 1 ? (shape-1)*scale : 0},
+      : mode{shape > 1 ? (shape-1)*scale : 0}, shape{shape}, scale{scale}, is_mode_unbounded{shape<1},
       mode_beta{(shape*(2-shape))/2.},
       mode_mapping_exponent{1./mode_beta},
       peak_accept_probability_const{std::pow (1 + (1-shape)*(1-shape), 0.5*((1-shape)+1./(1-shape))) / (2*(1-shape)*std::pow (shape, shape*shape/(1-shape)))} {}
@@ -433,13 +433,13 @@ namespace zest {
       static constexpr bool is_mode_unbounded = false;
       static constexpr auto dist_category = DistCategory::STRICTLY_INCREASING;
       static constexpr auto tail_category = TailCategory::FINITE;
-      constexpr Left (double shape, double scale) : shape{shape}, scale{scale}, mode{shape > 1 ? (shape-1)*scale : 0} {}
+      constexpr Left (double shape, double scale) : mode{shape > 1 ? (shape-1)*scale : 0}, shape{shape}, scale{scale} {}
       double pdf (double x) const {return shape < 1 ? 0 : std::pow(x, shape-1)*std::exp(-x/scale);}
       double cdf (double x) const {return std::pow(scale, shape)*boost::math::tgamma_lower (shape, x/scale);}
       double strip_area (double x) const {return shape > 1 ? (mode-x)*pdf(x) + cdf (x) : 0;}
     } left;
     Gamma (double shape = 1.0, double scale = 1.0)
-    : shape{shape}, scale{scale}, is_mode_unbounded{shape<1}, mode{shape > 1 ? (shape-1)*scale : 0}, right{shape, scale}, left{shape, scale} {}
+    : mode{shape > 1 ? (shape-1)*scale : 0}, shape{shape}, scale{scale}, is_mode_unbounded{shape<1}, right{shape, scale}, left{shape, scale} {}
   };
 
   class Weibull {
@@ -454,8 +454,8 @@ namespace zest {
       static constexpr auto dist_category = DistCategory::STRICTLY_DECREASING;
       static constexpr auto tail_category = TailCategory::MAP;
       constexpr Right (double shape, double scale)
-      : shape{shape}, scale{scale}, is_mode_unbounded{shape<1},
-      mode{shape > 1 ? scale*std::pow((shape-1)/shape, 1/shape) : 0},
+      : mode{shape > 1 ? scale*std::pow((shape-1)/shape, 1/shape) : 0},
+      shape{shape}, scale{scale}, is_mode_unbounded{shape<1},
       mode_mapping_exponent{2./(shape*(2-shape))},
       peak_accept_probability_const{std::pow (1 + (1-shape)*(1-shape), 0.5*((1-shape)+1./(1-shape))) / (2*(1-shape)*std::pow (shape, shape*shape/(1-shape)))} {}
       double pdf (double x) const {
@@ -485,7 +485,7 @@ namespace zest {
       static constexpr auto dist_category = DistCategory::STRICTLY_INCREASING;
       static constexpr auto tail_category = TailCategory::FINITE;
       constexpr Left (double shape, double scale)
-      : shape{shape}, scale{scale}, mode{shape > 1 ? scale*std::pow((shape-1)/shape, 1/shape) : 0} {}
+      : mode{shape > 1 ? scale*std::pow((shape-1)/shape, 1/shape) : 0}, shape{shape}, scale{scale} {}
       double pdf (double x) const {
         return shape < 1 ? 0 : shape/scale*std::pow(x/scale, shape-1)*std::exp(-std::pow(x/scale, shape));
       }
@@ -493,7 +493,7 @@ namespace zest {
       double strip_area (double x) const {return shape > 1 ? (mode-x)*pdf(x) + cdf (x) : 0;}
     } left;
     constexpr Weibull (double shape = 1.0, double scale = 1.0)
-    : shape{shape}, scale{scale}, mode{shape > 1 ? scale*std::pow((shape-1)/shape, 1/shape) : 0}, right{shape, scale}, left{shape, scale} {}
+    : mode{shape > 1 ? scale*std::pow((shape-1)/shape, 1/shape) : 0}, shape{shape}, scale{scale}, right{shape, scale}, left{shape, scale} {}
   };
 
   class LogNormal {
@@ -508,7 +508,7 @@ namespace zest {
       static constexpr auto dist_category = DistCategory::STRICTLY_DECREASING;
       static constexpr auto tail_category = TailCategory::MAP_REJECT;
       Right (double normal_mean, double normal_std_dev)
-      : normal_mean{normal_mean}, normal_std_dev{normal_std_dev}, mode{std::exp(normal_mean-normal_std_dev*normal_std_dev)} {}
+      : mode{std::exp(normal_mean-normal_std_dev*normal_std_dev)}, normal_mean{normal_mean}, normal_std_dev{normal_std_dev} {}
       double pdf (double x) const {
         return x ? std::exp(-(std::log(x)-normal_mean)*(std::log(x)-normal_mean)/2/normal_std_dev/normal_std_dev)/x : 0;
       }
@@ -535,7 +535,7 @@ namespace zest {
       static constexpr auto dist_category = DistCategory::STRICTLY_INCREASING;
       static constexpr auto tail_category = TailCategory::FINITE;
       Left (double normal_mean, double normal_std_dev)
-      : normal_mean{normal_mean}, normal_std_dev{normal_std_dev}, mode{std::exp(normal_mean-normal_std_dev*normal_std_dev)} {}
+      : mode{std::exp(normal_mean-normal_std_dev*normal_std_dev)}, normal_mean{normal_mean}, normal_std_dev{normal_std_dev} {}
       double pdf (double x) const {
         return x ? std::exp(-(std::log(x)-normal_mean)*(std::log(x)-normal_mean)/2/normal_std_dev/normal_std_dev)/x : 0;
       }
@@ -545,7 +545,7 @@ namespace zest {
       double strip_area (double x) const {return (mode-x)*pdf(x) + cdf (x);}
     } left;
     LogNormal (double normal_mean = 0.0, double normal_std_dev = 1.0)
-    : normal_mean{normal_mean}, normal_std_dev{normal_std_dev}, mode{std::exp(normal_mean-normal_std_dev*normal_std_dev)}, right{normal_mean, normal_std_dev}, left{normal_mean, normal_std_dev} {}
+    : mode{std::exp(normal_mean-normal_std_dev*normal_std_dev)}, normal_mean{normal_mean}, normal_std_dev{normal_std_dev}, right{normal_mean, normal_std_dev}, left{normal_mean, normal_std_dev} {}
   };
 
   class FisherF {
@@ -561,9 +561,10 @@ namespace zest {
       static constexpr auto dist_category = DistCategory::STRICTLY_DECREASING;
       static constexpr auto tail_category = TailCategory::MAP_REJECT;
       Right (double d1, double d2)
-      : d1{d1}, d2{d2}, is_mode_unbounded{d1<2}, mode{d1 > 2 ? d2*(d1-2)/d1/(d2+2) : 0}, 
+      : mode{d1 > 2 ? d2*(d1-2)/d1/(d2+2) : 0},  d1{d1}, d2{d2},
       mode_mapping_exponent{2/d1/(1-d1/4)},
-      peak_accept_probability_const{std::pow (d1/2, -d1*d1/(4-2*d1)) * std::pow (2 - d1 + d1*d1/4, (2 - d1 + d1*d1/4)/(2-d1)) / (2 - d1)} {}
+      peak_accept_probability_const{std::pow (d1/2, -d1*d1/(4-2*d1)) * std::pow (2 - d1 + d1*d1/4, (2 - d1 + d1*d1/4)/(2-d1)) / (2 - d1)},
+      is_mode_unbounded{d1<2} {}
       double pdf (double x) const {return math::fisher_f_pdf (d1, d2, x);}
       double ccdf (double x) const {return math::fisher_f_ccdf (d1, d2, x);}
       double strip_area (double x) const {
@@ -599,7 +600,7 @@ namespace zest {
       static constexpr bool is_mode_unbounded = false;
       static constexpr auto dist_category = DistCategory::STRICTLY_INCREASING;
       static constexpr auto tail_category = TailCategory::FINITE;
-      Left (double d1, double d2) : d1{d1}, d2{d2}, mode{d1 > 2 ? d2*(d1-2)/d1/(d2+2) : 0} {}
+      Left (double d1, double d2) : mode{d1 > 2 ? d2*(d1-2)/d1/(d2+2) : 0}, d1{d1}, d2{d2} {}
       double pdf (double x) const {return math::fisher_f_pdf (d1, d2, x);}
       double cdf (double x) const {return math::fisher_f_cdf (d1, d2, x);}
       double strip_area (double x) const {
@@ -607,7 +608,7 @@ namespace zest {
       }
     } left;
     FisherF (double d1 = 1.0, double d2 = 1.0)
-    : d1{d1}, d2{d2}, is_mode_unbounded{d1<2}, mode{d1 > 2 ? d2*(d1-2)/d1/(d2+2) : 0}, right{d1,d2}, left{d1, d2} {}
+    : mode{d1 > 2 ? d2*(d1-2)/d1/(d2+2) : 0}, d1{d1}, d2{d2}, is_mode_unbounded{d1<2}, right{d1,d2}, left{d1, d2} {}
   };
 
   namespace detail {
@@ -896,7 +897,7 @@ namespace zest {
     template <typename float_type>
     void verify_efficiency (const float_type * const x_corner_rel_mode, const float_type * const y_corner, uint_fast16_t first_idx, uint_fast16_t num_finite_regions, double region_area) {
       auto overall_rejection_efficiency = 0.;
-      for (int i=first_idx; i<first_idx+num_finite_regions; ++i) {
+      for (uint_fast16_t i=first_idx; i<first_idx+num_finite_regions; ++i) {
         auto efficiency = region_area/std::abs(x_corner_rel_mode[i])/(y_corner[i+1]-y_corner[i]);
         verify_region_rejection_efficiency (efficiency, i);
         overall_rejection_efficiency += efficiency;
@@ -944,7 +945,7 @@ namespace zest {
             if (Dist::pdf (Dist::support) != 0) throw std::logic_error ("PDF should be zero at the support boundary");
             if (Dist::strip_area (Dist::support) != 0) throw std::logic_error ("strip_area must return zero for a strip of zero height");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = binary_search_for_strip_coord<Dist, float_type> (Dist::support, Dist::mode, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -956,7 +957,7 @@ namespace zest {
             x_corner_rel_mode[0] = Dist::support - Dist::mode;
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1008,7 +1009,7 @@ namespace zest {
             if (dist.pdf (dist.support) != 0) throw std::logic_error ("PDF should be zero at the support boundary");
             if (dist.strip_area (dist.support) != 0) throw std::logic_error ("strip_area must return zero for a strip of zero height");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = binary_search_for_strip_coord<Dist, float_type> (dist.support, dist.mode, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1020,7 +1021,7 @@ namespace zest {
             x_corner_rel_mode[0] = dist.support - dist.mode;
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1076,7 +1077,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (Dist::mode, Dist::mode+1, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1089,7 +1090,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1];
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1149,7 +1150,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (dist.mode, dist.mode+1, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1162,7 +1163,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1];
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1225,7 +1226,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (Dist::mode, Dist::mode+1, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1238,7 +1239,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1];
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(std::round(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max()));
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1300,7 +1301,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (dist.mode, dist.mode+1, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1313,7 +1314,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1];
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1385,7 +1386,7 @@ namespace zest {
             if (Dist::pdf (Dist::support) != 0) throw std::logic_error ("PDF should be zero at the support boundary");
             if (Dist::strip_area (Dist::support) != 0) throw std::logic_error ("strip_area must return zero for a strip of zero height");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = binary_search_for_strip_coord<Dist, float_type> (Dist::support, Dist::mode, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1398,7 +1399,7 @@ namespace zest {
             x_corner_rel_mode[0] = Dist::support - Dist::mode;
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1464,7 +1465,7 @@ namespace zest {
             if (dist.pdf (dist.support) != 0) throw std::logic_error ("PDF should be zero at the support boundary");
             if (dist.strip_area (dist.support) != 0) throw std::logic_error ("strip_area must return zero for a strip of zero height");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = binary_search_for_strip_coord<Dist, float_type> (dist.support, dist.mode, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1477,7 +1478,7 @@ namespace zest {
             x_corner_rel_mode[0] = dist.support - dist.mode;
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1544,7 +1545,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (Dist::mode, Dist::mode+1, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1558,7 +1559,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1];
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1629,7 +1630,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (dist.mode, dist.mode+1, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1643,7 +1644,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1];
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1717,7 +1718,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (Dist::mode, Dist::mode+1, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1731,7 +1732,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1];
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(std::round(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max()));
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1804,7 +1805,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (dist.mode, dist.mode+1, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_signed_gen_range[i] = x_corner_rel_mode[i]*gen_signed_range_inv;
@@ -1818,7 +1819,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1];
             strip_width_w_signed_gen_range[0] = x_corner_rel_mode[0]*gen_signed_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<signed_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1899,7 +1900,7 @@ namespace zest {
             if (Dist::pdf (Dist::support) != 0) throw std::logic_error ("PDF should be zero at the support boundary");
             if (Dist::strip_area (Dist::support) != 0) throw std::logic_error ("strip_area must return zero for a strip of zero height");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = binary_search_for_strip_coord<Dist, float_type> (Dist::support, Dist::mode, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -1911,7 +1912,7 @@ namespace zest {
             
             verify_efficiency (x_corner_rel_mode, y_corner, 0, N, total_area/N);
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -1962,7 +1963,7 @@ namespace zest {
             if (dist.pdf (dist.support) != 0) throw std::logic_error ("PDF should be zero at the support boundary");
             if (dist.strip_area (dist.support) != 0) throw std::logic_error ("strip_area must return zero for a strip of zero height");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = binary_search_for_strip_coord<Dist, float_type> (dist.support, dist.mode, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -1974,7 +1975,7 @@ namespace zest {
             
             verify_efficiency (x_corner_rel_mode, y_corner, 0, N, total_area/N);
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2027,7 +2028,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (Dist::mode, Dist::mode+sign, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2040,7 +2041,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1]*sign;
             strip_width_w_unsigned_gen_range[0] = x_corner_rel_mode[0]*gen_unsigned_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2092,7 +2093,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (dist.mode, dist.mode+sign, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2105,7 +2106,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1]*sign;
             strip_width_w_unsigned_gen_range[0] = x_corner_rel_mode[0]*gen_unsigned_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2160,7 +2161,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (Dist::mode, Dist::mode+sign, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2173,7 +2174,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1]*sign;
             strip_width_w_unsigned_gen_range[0] = x_corner_rel_mode[0]*gen_unsigned_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2227,7 +2228,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (dist.mode, dist.mode+sign, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2240,7 +2241,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1]*sign;
             strip_width_w_unsigned_gen_range[0] = x_corner_rel_mode[0]*gen_unsigned_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2304,7 +2305,7 @@ namespace zest {
             if (Dist::pdf (Dist::support) != 0) throw std::logic_error ("PDF should be zero at the support boundary");
             if (Dist::strip_area (Dist::support) != 0) throw std::logic_error ("strip_area must return zero for a strip of zero height");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = binary_search_for_strip_coord<Dist, float_type> (Dist::support, Dist::mode, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2317,7 +2318,7 @@ namespace zest {
             
             verify_efficiency (x_corner_rel_mode, y_corner, 0, N-1, total_area/N);
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2376,7 +2377,7 @@ namespace zest {
             if (dist.pdf (dist.support) != 0) throw std::logic_error ("PDF should be zero at the support boundary");
             if (dist.strip_area (dist.support) != 0) throw std::logic_error ("strip_area must return zero for a strip of zero height");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = binary_search_for_strip_coord<Dist, float_type> (dist.support, dist.mode, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2389,7 +2390,7 @@ namespace zest {
             
             verify_efficiency (x_corner_rel_mode, y_corner, 0, dist.is_mode_unbounded ? N-1 : N, total_area/N);
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2449,7 +2450,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (Dist::mode, Dist::mode+sign, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2463,7 +2464,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1]*sign;
             strip_width_w_unsigned_gen_range[0] = x_corner_rel_mode[0]*gen_unsigned_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2522,7 +2523,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (dist.mode, dist.mode+sign, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2536,7 +2537,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1]*sign;
             strip_width_w_unsigned_gen_range[0] = x_corner_rel_mode[0]*gen_unsigned_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2598,7 +2599,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (Dist::mode, Dist::mode+sign, total_area*i/N) - Dist::mode;
               y_corner[i] = Dist::pdf (Dist::mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2612,7 +2613,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1]*sign;
             strip_width_w_unsigned_gen_range[0] = x_corner_rel_mode[0]*gen_unsigned_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2674,7 +2675,7 @@ namespace zest {
             if (y_max <= 0) throw std::logic_error ("PDF of mode must be positive (and PDF in general must be non-negative)");
             if (total_area <= 0) throw std::logic_error ("strip_area must return a positive value for all positive arguments");
             
-            for (int i=1; i<=N; ++i) {
+            for (uint_fast16_t i=1; i<=N; ++i) {
               x_corner_rel_mode[i] = multiplicative_binary_search<Dist, float_type> (dist.mode, dist.mode+sign, total_area*i/N, dist) - dist.mode;
               y_corner[i] = dist.pdf (dist.mode + x_corner_rel_mode[i]);
               strip_width_w_unsigned_gen_range[i] = x_corner_rel_mode[i]*gen_unsigned_range_inv;
@@ -2688,7 +2689,7 @@ namespace zest {
             x_corner_rel_mode[0] = total_area/N/y_corner[1]*sign;
             strip_width_w_unsigned_gen_range[0] = x_corner_rel_mode[0]*gen_unsigned_range_inv;
             
-            for (int i=0; i<N; ++i)
+            for (uint_fast16_t i=0; i<N; ++i)
               x_corner_ratio[i] = static_cast<unsigned_integer_type>(x_corner_rel_mode[i+1]/x_corner_rel_mode[i]*std::numeric_limits<unsigned_integer_type>::max());
             
             if (y_corner[N] != y_max || x_corner_rel_mode[N] != 0) throw std::logic_error ("unexpected error");
@@ -2747,13 +2748,15 @@ namespace zest {
 
       template <class Dist, class URBG, uint_fast16_t N, typename float_type>
       static_impl<Dist,URBG,N,float_type>::static_impl ()
-      : area_right{Dist::Right::strip_area (Dist::Right::mode)}, area_left{Dist::Left::strip_area (Dist::Left::mode)}, total_area{area_right+area_left}, one_sided{area_left==0 || area_right==0}, canonical_dist{}, right{}, left{} {}
+      : area_right{Dist::Right::strip_area (Dist::Right::mode)}, area_left{Dist::Left::strip_area (Dist::Left::mode)}, total_area{area_right+area_left}, one_sided{area_left==0 || area_right==0}, right{}, left{}, canonical_dist{} {
+        if (area_right==0 && area_left==0) throw std::logic_error ("the area can not be zero on both sides of the mode");
+      }
 
       template <class Dist, class URBG, uint_fast16_t N, typename float_type>
       float_type static_impl<Dist,URBG,N,float_type>::operator() (URBG &gen) const {
         if (one_sided) {
           if (area_right) return right(gen);
-          else if (area_left) return left(gen);
+          else /*if (area_left)*/ return left(gen);
         }
         else if (gen()*gen_unsigned_range_inv < area_right/total_area) return right(gen);
         else return left(gen);
@@ -2779,7 +2782,7 @@ namespace zest {
         float_type operator() (URBG &gen) const {
           if (one_sided) {
             if (area_right) return right(gen);
-            else if (area_left) return left(gen);
+            else /*if (area_left)*/ return left(gen);
           }
           else if (canonical_dist(gen) < area_right/total_area) return right(gen);
           else return left(gen);
@@ -2788,7 +2791,9 @@ namespace zest {
 
       template <class Dist, class URBG, uint_fast16_t N, typename float_type>
       impl<Dist,URBG,N,float_type>::impl (const Dist &dist)
-      : area_right{dist.right.strip_area (dist.right.mode)}, area_left{dist.left.strip_area (dist.left.mode)}, total_area{area_right+area_left}, one_sided{area_left==0 || area_right==0}, right{dist.right}, left{dist.left} {}
+      : area_right{dist.right.strip_area (dist.right.mode)}, area_left{dist.left.strip_area (dist.left.mode)}, total_area{area_right+area_left}, one_sided{area_left==0 || area_right==0}, right{dist.right}, left{dist.left} {
+        if (area_right==0 && area_left==0) throw std::logic_error ("the area can not be zero on both sides of the mode");
+      }
 
     }
 
